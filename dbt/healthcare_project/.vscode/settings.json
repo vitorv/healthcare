@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "C:\\Users\\VitorLenovoYoga\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+  "[sql]": {
+    "editor.defaultFormatter": "innerdrivestudio.vscode-dbt-power-user",
+    "editor.formatOnSave": true
+  },
+  "dbt.sqlFormat": "dbt"
+}
