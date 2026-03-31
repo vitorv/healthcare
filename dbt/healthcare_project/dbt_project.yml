@@ -33,7 +33,7 @@ models:
   healthcare_project:
     bronze:
       +schema: bronze
-      +materialized: table
+      +materialized: view
     silver:
       +schema: silver
       +materialized: table
