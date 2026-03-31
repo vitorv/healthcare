@@ -64,9 +64,9 @@
                     
                     -- Track the names of the tables we created
                     IF (tables_list = '') THEN
-                        tables_list := table_name;
+                        tables_list := ' - ' || table_name;
                     ELSE
-                        tables_list := tables_list || ', ' || table_name;
+                        tables_list := tables_list || '\n -' || table_name;
                     END IF;
                     
                 EXCEPTION
@@ -78,7 +78,7 @@
                 
             END FOR;
             
-            RETURN 'Successfully ingested ' || tables_created || ' raw csv files into Bronze layer. \nTables loaded: ' || tables_list;
+            RETURN 'Successfully ingested ' || tables_created || ' raw csv files into Bronze layer. \nTables loaded:\n ' || tables_list;
         END;
         $$;
     {% endset %}
