@@ -1,8 +1,0 @@
-{
-    "dbt.dbtPythonPathOverride": "C:\\Users\\VitorLenovoYoga\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
-    "[sql]": {
-        "editor.defaultFormatter": "innerdrivestudio.vscode-dbt-power-user",
-        "editor.formatOnSave": true
-    },
-    "dbt.sqlFormat": "dbt"
-}
