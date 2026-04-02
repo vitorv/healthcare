@@ -21,7 +21,7 @@ renamed AS (
         "Start Date"                                       AS start_date,
         "End Date"                                         AS end_date,
         "Measure Date Range"                               AS measure_date_range,
-        "LOCATION1"
+        "LOCATION1"                                        AS location_1
     FROM source_data
 )
 
