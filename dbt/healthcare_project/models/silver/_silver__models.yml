@@ -1,0 +1,228 @@
+version: 2
+
+models:
+  # ════════════════════════════════════════════════════════════════
+  # silver_providers
+  # ════════════════════════════════════════════════════════════════
+  - name: silver_providers
+    description: >
+      Cleaned, typed, and deduplicated nursing home provider data.
+      One row per CMS Certification Number (CCN).
+      Source: stg_nh_providerinfo_oct2024.
+      Supports metrics: 1.1 (staffing ratio), 2.3 (staffing vs. occupancy),
+      2.5 (lowest-staffed facilities), 3.5 (staffing-readmission correlation),
+      v1-Q2 (turnover analysis).
+    columns:
+      # --- Primary Key ---
+      - name: ccn
+        description: "CMS Certification Number — primary key, one row per facility"
+        tests:
+          - unique
+          - not_null
+
+      # --- Demographics ---
+      - name: state_code
+        description: "Two-letter state abbreviation, uppercased and trimmed"
+        tests:
+          - not_null
+
+      - name: zip_code
+        description: "5-digit ZIP code, left-padded with zeros"
+
+      # --- Capacity ---
+      - name: certified_bed_count
+        description: "Number of certified beds in the facility"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: avg_daily_residents
+        description: "Average number of residents per day"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      # --- Star Ratings ---
+      - name: overall_rating
+        description: "CMS 5-star overall rating (1-5)"
+        tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+
+      - name: health_inspection_rating
+        description: "CMS health inspection star rating (1-5)"
+        tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+
+      - name: quality_measure_rating
+        description: "CMS quality measure star rating (1-5)"
+        tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+
+      - name: staffing_rating
+        description: "CMS staffing star rating (1-5)"
+        tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+
+      # --- Reported Staffing Hours (Metric 1.1) ---
+      - name: reported_total_nurse_hours_prd
+        description: "Reported total nurse staffing hours per resident per day"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: reported_rn_hours_prd
+        description: "Reported RN staffing hours per resident per day"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: reported_lpn_hours_prd
+        description: "Reported LPN staffing hours per resident per day"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: reported_cna_hours_prd
+        description: "Reported CNA (nurse aide) staffing hours per resident per day"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      # --- Turnover (Metric v1-Q2) ---
+      - name: total_nurse_turnover_pct
+        description: "Total nursing staff turnover percentage"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: rn_turnover_pct
+        description: "Registered nurse turnover percentage"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      # --- Penalties ---
+      - name: substantiated_complaints
+        description: "Number of substantiated complaints"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: total_fine_amount
+        description: "Total amount of fines in dollars"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      # --- Metadata ---
+      - name: processing_date
+        description: "CMS data processing date"
+
+  # ════════════════════════════════════════════════════════════════
+  # silver_state_averages
+  # ════════════════════════════════════════════════════════════════
+  - name: silver_state_averages
+    description: >
+      Cleaned and typed state/national average benchmarks for nursing homes.
+      One row per state plus one "NATION" row.
+      Source: stg_nh_stateusaverages_oct2024.
+      Supports metrics: 1.1 (benchmarks), 2.5, 3.3, v1-Q2 (benchmarks).
+    columns:
+      # --- Primary Key ---
+      - name: state_or_nation
+        description: "State abbreviation or 'NATION' for national average — primary key"
+        tests:
+          - unique
+          - not_null
+
+      # --- Staffing Benchmarks ---
+      - name: avg_total_nurse_hours_prd
+        description: "State/national average total nurse staffing hours per resident per day"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: avg_rn_hours_prd
+        description: "State/national average RN hours per resident per day"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      # --- Turnover Benchmarks ---
+      - name: avg_total_nurse_turnover_pct
+        description: "State/national average total nursing staff turnover"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      # --- Rehospitalization (Metric 3.3) ---
+      - name: pct_short_stay_rehospitalized
+        description: "Percentage of short-stay residents rehospitalized after nursing home admission"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+
+      # --- Metadata ---
+      - name: processing_date
+        description: "CMS data processing date"
+
+  # ════════════════════════════════════════════════════════════════
+  # silver_snf_vbp_facility
+  # ════════════════════════════════════════════════════════════════
+  - name: silver_snf_vbp_facility
+    description: >
+      Cleaned and typed SNF Value-Based Purchasing facility performance data.
+      One row per CMS Certification Number (CCN).
+      Source: stg_fy_2024_snf_vbp_facility_performance.
+      Supports metrics: 3.3 (readmission rates), 3.5 (staffing-readmission correlation).
+    columns:
+      # --- Primary Key ---
+      - name: ccn
+        description: "CMS Certification Number — primary key, one row per facility"
+        tests:
+          - unique
+          - not_null
+
+      - name: state_code
+        description: "Two-letter state abbreviation"
+        tests:
+          - not_null
+
+      # --- Readmission Rates (Metric 3.3, 3.5) ---
+      - name: baseline_readmission_rate
+        description: "Baseline period (FY 2019) risk-standardized readmission rate"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+
+      - name: performance_readmission_rate
+        description: "Performance period (FY 2022) risk-standardized readmission rate"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+
+      # --- VBP Scores ---
+      - name: performance_score
+        description: "Overall VBP performance score (higher = better)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: incentive_payment_multiplier
+        description: "VBP incentive payment multiplier (1.0 = neutral)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: vbp_ranking
+        description: "SNF VBP program ranking (1 = best)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 1
