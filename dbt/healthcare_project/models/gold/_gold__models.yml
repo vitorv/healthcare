@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: dim_providers
+    description: "Central dimension for all SNF provider attributes."
+    columns:
+      - name: ccn
+        description: "CMS Certification Number (CCN) - Unique identifier."
+        tests:
+          - unique
+          - not_null
+
+  - name: fct_staffing_occupancy
+    description: "Facility-level staffing hours and occupancy rate comparisons."
+    columns:
+      - name: ccn
+        description: "FK to dim_providers."
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('dim_providers')
+              field: ccn
+      - name: occupancy_rate
+        description: "Residents / Beds ratio."
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1.5 # Allowing some over-capacity, but flagging extreme values
+      - name: staffing_to_state_avg_ratio
+        description: "Facility staffing hours / State average."
+
+  - name: fct_quality_readmission
+    description: "Risk-standardized readmission rates and staffing correlation."
+    columns:
+      - name: ccn
+        description: "FK to dim_providers."
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('dim_providers')
+              field: ccn
+      - name: performance_readmission_rate
+        description: "Facility readmission rate."
+
+  - name: fct_turnover_analysis
+    description: "Facility turnover rates vs. benchmarks."
+    columns:
+      - name: ccn
+        description: "FK to dim_providers."
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('dim_providers')
+              field: ccn
+      - name: total_nurse_turnover_pct
+        description: "Facility total nursing turnover percentage."
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 500 # Some facilities might have > 100% turnover in a year
