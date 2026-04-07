@@ -6,7 +6,7 @@ from snowflake.snowpark.context import get_active_session
 
 # Basic Page Config
 st.set_page_config(layout="wide", page_title="Healthcare Medallion Analytics")
-st.title("🏥 SNF Medallion Dashboard: 100% Complete Visualization")
+st.title("Healthcare Visualization Dashboard")
 
 # Get the current credentials
 session = get_active_session()
@@ -92,51 +92,126 @@ with tab_staff:
     )
     st.plotly_chart(fig_s, use_container_width=True)
 
-    st.write("#### 🏁 Understaffed Outliers")
-    st.dataframe(df_s.nsmallest(10, 'STAFFING_TO_NATIONAL_AVG_RATIO')[['PROVIDER_NAME', 'STATE_CODE', 'STAFFING_TO_NATIONAL_AVG_RATIO']], hide_index=True, use_container_width=True)
-
+    # ══════════════════════════════════════════════
+    # UNDERSTAFFED OUTLIERS (REPORTERS)
+    # ══════════════════════════════════════════════
+    st.write("#### 🏁 Understaffed Outliers (Lowest Reported Staffing)")
+    reporters_only = df_s[df_s['STAFFING_TO_NATIONAL_AVG_RATIO'] > 0]
+    outliers_table = reporters_only.nsmallest(10, 'STAFFING_TO_NATIONAL_AVG_RATIO')[
+        ['PROVIDER_NAME', 'STATE_CODE', 'STAFFING_TO_NATIONAL_AVG_RATIO']
+    ]
+    st.dataframe(outliers_table, hide_index=True, use_container_width=True,
+        column_config={"STAFFING_TO_NATIONAL_AVG_RATIO": st.column_config.NumberColumn("Staffing Index", format="%.2fx")})
+    st.divider()
+    # ══════════════════════════════════════════════
+    # NON-REPORTING FACILITIES (0s)
+    # ══════════════════════════════════════════════
+    st.write("#### ⚠️ High Risk: Non-Reporting Facilities (Missing Data)")
+    non_reporters = df_s[df_s['STAFFING_TO_NATIONAL_AVG_RATIO'] == 0][
+        ['PROVIDER_NAME', 'CITY', 'STATE_CODE', 'OWNERSHIP_TYPE']
+    ].head(15) # Limiting to 15 to keep it clean
+    if not non_reporters.empty:
+        st.info("The facilities below have failed to report staffing data. This is often flagged as a major compliance risk by CMS.")
+        st.dataframe(non_reporters, hide_index=True, use_container_width=True)
+    else:
+        st.success("Great news! All selected facilities have reported their staffing data.")
+    
 # ══════════════════════════════════════════════
 # TAB 2: QUALITY & READMISSION (Metric 3.3, 3.5)
 # ══════════════════════════════════════════════
 with tab_quality:
-    st.header("Care Quality: Readmission Impact")
+    st.header("Care Quality: Readmission Performance Analysis")
     
-    ql1, ql2 = st.columns(2)
+    ql1, ql2, ql3 = st.columns(3)
     with ql1: st.metric("Avg Readmission Rate", f"{df_q['PERFORMANCE_READMISSION_RATE'].mean():.2%}")
-    with ql2: st.metric("Performance vs. US Average", f"{df_q['READMISSION_TO_NATIONAL_AVG_RATIO'].mean():.2f}x")
+    with ql2: st.metric("Performance vs. US Avg", f"{df_q['READMISSION_TO_NATIONAL_AVG_RATIO'].mean():.2f}x")
+    with ql3: st.metric("Top Performers", f"{len(df_q[df_q['OVERALL_RATING'] >= 4])} (4-5 Stars)")
 
-    st.write("#### Correlation: Nurse Staffing vs. Readmission Performance")
-    # Higher hours should correlate with lower readmission (Metric 3.5)
+    # ══════════════════════════════════════════════
+    # Correlation Chart (Staffing vs Quality)
+    # ══════════════════════════════════════════════
+    st.write("#### 🏥 Visual Correlation: Does Staffing Improve Readmissions?")
     fig_q = px.scatter(
         df_q, x="REPORTED_TOTAL_NURSE_HOURS_PRD", y="PERFORMANCE_READMISSION_RATE",
-        color="STATE_CODE", hover_name="PROVIDER_NAME", trendline="ols", # Shows the trend!
-        render_mode="svg", template="plotly_dark", height=500,
-        labels={"REPORTED_TOTAL_NURSE_HOURS_PRD": "Total Nurse Hours", "PERFORMANCE_READMISSION_RATE": "30-Day Readmission Rate"}
+        color="STATE_CODE", hover_name="PROVIDER_NAME", trendline="ols",
+        render_mode="svg", template="plotly_dark", height=450,
+        labels={"REPORTED_TOTAL_NURSE_HOURS_PRD": "Nurse Hours/Day", "PERFORMANCE_READMISSION_RATE": "30-Day Readmission Rate"}
     )
     st.plotly_chart(fig_q, use_container_width=True)
+
+    st.divider()
+
+    # ══════════════════════════════════════════════
+    # State & Facility Breakdowns
+    # ══════════════════════════════════════════════
+    col_state, col_fac = st.columns(2)
+
+    with col_state:
+        st.write("#### 📊 Readmission Rates by State")
+        state_q = df_q.groupby('STATE_CODE')['PERFORMANCE_READMISSION_RATE'].mean().reset_index().sort_values('PERFORMANCE_READMISSION_RATE')
+        
+        # Color by Readmission Rate (Lower is Better/Greener)
+        fig_bar_q = px.bar(state_q, x="STATE_CODE", y="PERFORMANCE_READMISSION_RATE",
+                           color="PERFORMANCE_READMISSION_RATE", color_continuous_scale="Viridis", # Reversed scale
+                           labels={"PERFORMANCE_READMISSION_RATE": "Avg Readmission Rate (%)"},
+                           text_auto='.1%', template="plotly_dark")
+        st.plotly_chart(fig_bar_q, use_container_width=True)
+
+    with col_fac:
+        st.write("#### 🏆 Top 10 Facilities (Lowest Readmissions)")
+        # Note: Lower is better for readmissions
+        top_10_readmit = df_q.nsmallest(10, 'PERFORMANCE_READMISSION_RATE')[
+            ['PROVIDER_NAME', 'STATE_CODE', 'PERFORMANCE_READMISSION_RATE']
+        ]
+        st.dataframe(top_10_readmit, hide_index=True, use_container_width=True,
+                     column_config={"PERFORMANCE_READMISSION_RATE": st.column_config.NumberColumn("Readmit Rate", format="%.2%")})
+
+    # High-Risk Outlier List
+    st.write("#### 🚨 Warning: Highest Readmission Risk Outliers")
+    outlier_df = df_q.nlargest(10, 'PERFORMANCE_READMISSION_RATE')[['PROVIDER_NAME', 'CITY', 'STATE_CODE', 'PERFORMANCE_READMISSION_RATE']]
+    st.dataframe(outlier_df, hide_index=True, use_container_width=True,
+                 column_config={"PERFORMANCE_READMISSION_RATE": st.column_config.NumberColumn("Readmit Rate", format="%.2%")})
+
 
 # ══════════════════════════════════════════════
 # TAB 3: TURNOVER & BURNOUT (Metric v1-Q2)
 # ══════════════════════════════════════════════
 with tab_turnover:
-    st.header("Nurse Retention & Workforce Vitality")
+    st.header("Nurse Turnover & Workforce Burnout")
+    
+    # Filter out the 0s (missing data) for accurate averages
+    df_t_clean = df_t[(df_t['TOTAL_NURSE_TURNOVER_PCT'] > 0) & (df_t['REPORTED_TOTAL_NURSE_HOURS_PRD'] > 0)]
     
     tl1, tl2 = st.columns(2)
-    with tl1: st.metric("Total Team Turnover", f"{df_t['TOTAL_NURSE_TURNOVER_PCT'].mean():.1%}")
-    with tl2: st.metric("RN Specific Turnover", f"{df_t['RN_TURNOVER_PCT'].mean():.1%}")
+    # Replaced :.1% with :.1f% because the data is already on a 0-100 scale
+    with tl1: st.metric("Avg Total Team Turnover", f"{df_t_clean['TOTAL_NURSE_TURNOVER_PCT'].mean():.1f}%")
+    with tl2: st.metric("Avg RN Specific Turnover", f"{df_t_clean['RN_TURNOVER_PCT'].mean():.1f}%")
 
-    st.write("#### Burnout Analysis: Retention vs. Daily Workload")
-    # Higher workload (low staffing hours) often correlates with higher turnover
+    st.write("#### Burnout Analysis: Turnover vs. Daily Workload")
+    # Cleaned legend, added trendline, grouped by STATE
     fig_t = px.scatter(
-        df_t, x="REPORTED_TOTAL_NURSE_HOURS_PRD", y="TOTAL_NURSE_TURNOVER_PCT",
-        color="STATE_CODE", symbol="OWNERSHIP_TYPE", hover_name="PROVIDER_NAME",
+        df_t_clean, x="REPORTED_TOTAL_NURSE_HOURS_PRD", y="TOTAL_NURSE_TURNOVER_PCT",
+        color="STATE_CODE", hover_name="PROVIDER_NAME", 
+        trendline="ols", # Shows if low hours = high turnover
         render_mode="svg", template="plotly_dark", height=500,
-        labels={"REPORTED_TOTAL_NURSE_HOURS_PRD": "Total Nurse Hours", "TOTAL_NURSE_TURNOVER_PCT": "Retention (% Left Facility)"}
+        labels={
+            "REPORTED_TOTAL_NURSE_HOURS_PRD": "Nurse Hours (per resident/day)", 
+            "TOTAL_NURSE_TURNOVER_PCT": "Turnover Rate (%)",
+            "STATE_CODE": "State"
+        }
     )
     st.plotly_chart(fig_t, use_container_width=True)
 
-    # State leaderboard for highest turnover
-    st.write("#### 📉 Ranking: States with Highest Nurse Burnout (Avg Turnover %)")
-    burnout_stats = df_t.groupby('STATE_CODE')['TOTAL_NURSE_TURNOVER_PCT'].mean().reset_index().sort_values('TOTAL_NURSE_TURNOVER_PCT', ascending=False)
-    st.bar_chart(burnout_stats, x="STATE_CODE", y="TOTAL_NURSE_TURNOVER_PCT", use_container_width=True)
 
+    # Replaced simple bar chart with a colored Plotly bar chart
+    st.write("#### 📉 Ranking: States with Highest Nurse Burnout")
+    burnout_stats = df_t_clean.groupby('STATE_CODE')['TOTAL_NURSE_TURNOVER_PCT'].mean().reset_index().sort_values('TOTAL_NURSE_TURNOVER_PCT', ascending=False)
+    
+    fig_bar_t = px.bar(
+        burnout_stats, x="STATE_CODE", y="TOTAL_NURSE_TURNOVER_PCT", 
+        text_auto='.1f', color="TOTAL_NURSE_TURNOVER_PCT", color_continuous_scale="Reds",
+        labels={"STATE_CODE": "State", "TOTAL_NURSE_TURNOVER_PCT": "Avg Turnover (%)"},
+        template="plotly_dark", height=400
+    )
+    fig_bar_t.update_layout(showlegend=False)
+    st.plotly_chart(fig_bar_t, use_container_width=True)
