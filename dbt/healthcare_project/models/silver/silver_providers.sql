@@ -14,7 +14,7 @@
       5. Column pruning — 103 cols → ~40 (all footnotes removed)
       6. Light standardization — TRIM, UPPER state, LPAD zip, phone cleanup
 
-    Supports metrics: 1.1, 2.3, 2.5, 3.5, v1-Q2
+    Supports metrics: 1.1, 2.3, 2.5, 3.5, Q2
 #}
 
 WITH source AS (
@@ -116,7 +116,7 @@ cleaned AS (
             AS casemix_total_nurse_hours_prd,
 
         -- ══════════════════════════════════════════════
-        -- Turnover (Metric v1-Q2)
+        -- Turnover (Metric Q2)
         -- ══════════════════════════════════════════════
         TRY_TO_DECIMAL(total_nursing_staff_turnover, 10, 2)         AS total_nurse_turnover_pct,
         TRY_TO_DECIMAL(registered_nurse_turnover, 10, 2)            AS rn_turnover_pct,

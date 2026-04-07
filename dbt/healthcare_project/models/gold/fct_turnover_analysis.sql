@@ -3,7 +3,7 @@
 {#
     Gold Fact: Turnover Analysis.
     Answers Metric:
-    - v1-Q2: Nurse staff turnover rates and correlation between turnover and staffing levels.
+    - Q2: Nurse staff turnover rates and correlation between turnover and staffing levels.
 
     Updates:
     - Switched to INNER JOIN for Star Schema consistency and referential integrity.
@@ -35,7 +35,7 @@ final AS (
         -- Primary Key
         p.ccn,
 
-        -- Facility Turnover Metrics (Metric v1-Q2)
+        -- Facility Turnover Metrics (Metric Q2)
         p.total_nurse_turnover_pct,
         p.rn_turnover_pct,
         p.administrator_departures,

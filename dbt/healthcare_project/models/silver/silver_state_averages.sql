@@ -14,7 +14,7 @@
       5. Column pruning — 48 cols → ~30 (fire safety deficiency cols removed)
       6. Light standardization — UPPER TRIM on state
 
-    Supports metrics: 1.1 (benchmarks), 2.5, 3.3, v1-Q2 (benchmarks)
+    Supports metrics: 1.1 (benchmarks), 2.5, 3.3, Q2 (benchmarks)
 #}
 
 WITH source AS (
@@ -63,7 +63,7 @@ cleaned AS (
             AS avg_pt_hours_prd,
 
         -- ══════════════════════════════════════════════
-        -- Turnover Benchmarks (Metric v1-Q2)
+        -- Turnover Benchmarks (Metric Q2)
         -- ══════════════════════════════════════════════
         TRY_TO_DECIMAL(total_nursing_staff_turnover, 10, 2)         AS avg_total_nurse_turnover_pct,
         TRY_TO_DECIMAL(registered_nurse_turnover, 10, 2)            AS avg_rn_turnover_pct,

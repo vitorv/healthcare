@@ -174,7 +174,7 @@ with tab_quality:
 
 
 # ══════════════════════════════════════════════
-# TAB 3: TURNOVER & BURNOUT (Metric v1-Q2)
+# TAB 3: TURNOVER & BURNOUT (Metric Q2)
 # ══════════════════════════════════════════════
 with tab_turnover:
     st.header("Nurse Turnover & Workforce Burnout")

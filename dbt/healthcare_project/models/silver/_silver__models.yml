@@ -11,7 +11,7 @@ models:
       Source: stg_nh_providerinfo_oct2024.
       Supports metrics: 1.1 (staffing ratio), 2.3 (staffing vs. occupancy),
       2.5 (lowest-staffed facilities), 3.5 (staffing-readmission correlation),
-      v1-Q2 (turnover analysis).
+      Q2 (turnover analysis).
     columns:
       # --- Primary Key ---
       - name: ccn
@@ -92,7 +92,7 @@ models:
           - dbt_utils.accepted_range:
               min_value: 0
 
-      # --- Turnover (Metric v1-Q2) ---
+      # --- Turnover (Metric Q2) ---
       - name: total_nurse_turnover_pct
         description: "Total nursing staff turnover percentage"
         tests:
@@ -130,7 +130,7 @@ models:
       Cleaned and typed state/national average benchmarks for nursing homes.
       One row per state plus one "NATION" row.
       Source: stg_nh_stateusaverages_oct2024.
-      Supports metrics: 1.1 (benchmarks), 2.5, 3.3, v1-Q2 (benchmarks).
+      Supports metrics: 1.1 (benchmarks), 2.5, 3.3, Q2 (benchmarks).
     columns:
       # --- Primary Key ---
       - name: state_or_nation
