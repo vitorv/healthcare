@@ -4,6 +4,9 @@ dbt_packages/
 logs/
 gdrive_s3_sync/package/
 
+# large files
+*.mp4
+
 # Python and virtual environments
 .venv/
 venv/
