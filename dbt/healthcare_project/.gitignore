@@ -2,6 +2,7 @@
 target/
 dbt_packages/
 logs/
+gdrive_s3_sync/packacge/
 
 # Python and virtual environments
 .venv/
